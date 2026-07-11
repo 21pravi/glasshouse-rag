@@ -122,12 +122,9 @@ class OpenAIEmbedder:
 
 
 class OpenAIChat:
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini",
-                 base_url: str | None = None):
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
         from openai import OpenAI
-        # base_url lets this same class drive any OpenAI-compatible provider
-        # (Groq, Gemini, xAI/Grok, DeepSeek, Mistral, ...). None = real OpenAI.
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(api_key=api_key)
         self.model = model
 
     def complete(self, system: str, messages: list[dict]) -> str:
@@ -140,10 +137,9 @@ class OpenAIChat:
 
 
 class OpenAIVision:
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini",
-                 base_url: str | None = None):
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
         from openai import OpenAI
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(api_key=api_key)
         self.model = model
 
     def describe(self, image_bytes: bytes, mime_type: str) -> str:
@@ -236,94 +232,6 @@ class OfflineVision:
     def describe(self, image_bytes: bytes, mime_type: str) -> str:
         import imageanalysis
         return imageanalysis.describe(image_bytes)
-
-
-# ---------------------------------------------------------------------------
-# Provider registry
-# ---------------------------------------------------------------------------
-#
-# Every provider except Anthropic speaks the OpenAI chat-completions protocol,
-# so one class (OpenAIChat/OpenAIVision with a base_url) drives all of them.
-# To add a provider, add one row here — nothing else changes.
-#
-# Each row: env var -> (display name, default model, base_url, supports_vision)
-# base_url None means "real OpenAI". supports_vision gates the image feature.
-
-PROVIDERS: dict[str, dict] = {
-    "OPENAI_API_KEY": {
-        "name": "openai", "model": "gpt-4o-mini",
-        "base_url": None, "vision": True,
-    },
-    "ANTHROPIC_API_KEY": {
-        "name": "claude", "model": "claude-sonnet-4-6",
-        "base_url": "anthropic", "vision": True,   # special-cased below
-    },
-    "GROQ_API_KEY": {
-        "name": "groq", "model": "llama-3.3-70b-versatile",
-        "base_url": "https://api.groq.com/openai/v1", "vision": False,
-    },
-    "GEMINI_API_KEY": {
-        "name": "gemini", "model": "gemini-2.5-flash",
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "vision": True,
-    },
-    "XAI_API_KEY": {
-        "name": "grok", "model": "grok-3",
-        "base_url": "https://api.x.ai/v1", "vision": True,
-    },
-    "DEEPSEEK_API_KEY": {
-        "name": "deepseek", "model": "deepseek-chat",
-        "base_url": "https://api.deepseek.com", "vision": False,
-    },
-    "MISTRAL_API_KEY": {
-        "name": "mistral", "model": "mistral-small-latest",
-        "base_url": "https://api.mistral.ai/v1", "vision": False,
-    },
-}
-
-# Preference order when several keys are set. OpenAI and Claude first (highest
-# quality), then the generous free tiers.
-PROVIDER_ORDER = [
-    "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY",
-    "GEMINI_API_KEY", "XAI_API_KEY", "DEEPSEEK_API_KEY", "MISTRAL_API_KEY",
-]
-
-
-def _make_provider(env_var: str, key: str, model: str | None = None):
-    """Build (name, chat, vision) for one provider from its key."""
-    spec = PROVIDERS[env_var]
-    model = model or spec["model"]
-
-    if spec["base_url"] == "anthropic":
-        chat = AnthropicChat(key, model)
-        vision = AnthropicVision(key, model) if spec["vision"] else None
-        return spec["name"], chat, vision
-
-    chat = OpenAIChat(key, model, base_url=spec["base_url"])
-    vision = (OpenAIVision(key, model, base_url=spec["base_url"])
-              if spec["vision"] else None)
-    return spec["name"], chat, vision
-
-
-def build_online_providers(env: dict | None = None
-                           ) -> tuple[str | None, object, object]:
-    """Pick the first configured provider in PROVIDER_ORDER.
-
-    An optional MODEL override (env var GLASSHOUSE_MODEL) lets the operator
-    pin a specific model on whichever provider is selected.
-
-    Returns (name, chat, vision). (None, None, None) when no key is set, which
-    is the signal for offline-only.
-    """
-    import os
-    env = env if env is not None else os.environ
-    override_model = env.get("GLASSHOUSE_MODEL") or None
-
-    for env_var in PROVIDER_ORDER:
-        key = env.get(env_var, "")
-        if key:
-            return _make_provider(env_var, key, override_model)
-    return None, None, None
 
 
 # ---------------------------------------------------------------------------
