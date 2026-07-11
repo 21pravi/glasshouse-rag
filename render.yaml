@@ -1,0 +1,34 @@
+# Render Blueprint. In Render: New + -> Blueprint -> point at this repo.
+# The online engine turns on the moment ANTHROPIC_API_KEY is set in the
+# dashboard; until then the service runs offline-only, which needs no key.
+services:
+  - type: web
+    name: glasshouse-rag
+    runtime: python
+    plan: free
+    # Online engine needs the anthropic package, so install the online reqs.
+    buildCommand: pip install -r requirements-online.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # Set ONE of these in the Render dashboard (Environment tab), never in git.
+      # Leave all unset to run offline-only. Groq and Gemini have free tiers.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      # SQLite lives on the container's ephemeral disk; fine for a demo.
+      - key: SQLITE_DB_PATH
+        value: /tmp/index.db

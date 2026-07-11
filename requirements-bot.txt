@@ -1,0 +1,3 @@
+# Telegram front-end (bot.py) only. The web UI does not need this.
+-r requirements.txt
+python-telegram-bot==21.6

@@ -1,0 +1,4 @@
+# Optional — only for the online engine. Install the one you use.
+-r requirements.txt
+openai>=1.40.0        # OPENAI_API_KEY  -> gpt-4o-mini
+anthropic>=0.40.0     # ANTHROPIC_API_KEY -> Claude

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Secrets — never commit these
+.env
+.env.local
+
+# Generated at runtime
+*.db
+*.vocab.json
+vectorstore.db
+index.db
+
+# Generated test fixtures (rebuild with tests/make_expected.py)
+tests/expected.json
+tests/knowledge_base_dump.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

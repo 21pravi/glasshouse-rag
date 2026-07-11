@@ -1,0 +1,9 @@
+# Offline engine — BM25 retrieval, extractive QA, classical-CV vision.
+# This is the complete dependency list. No API key, no model, no network.
+numpy>=1.26
+pillow>=10.0
+
+# Web server. The static build in docs/ needs none of this.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
